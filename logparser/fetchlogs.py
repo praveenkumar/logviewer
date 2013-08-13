@@ -53,7 +53,7 @@ def  fetch_logs(log_path=None, log_url=None):
 def fetch_url_log(log_dict, log_location_url):
 	try:
 		if ".log" in log_location_url:
-			log_dict = read_log(log_dict, log_location_url)
+			log_dict = read_url_log(log_dict, log_location_url)
 
 		else:
 			url_object = urllib2.urlopen(log_location_url, timeout=30)
@@ -62,7 +62,7 @@ def fetch_url_log(log_dict, log_location_url):
 			for link in soup_object.find_all('a'): 
 	  			if ".log" in link.get('href'):
 	  				log_url = ("%s%s") % (log_location_url, link.get('href'))
-	  				log_dict = read_log(log_dict, log_url)
+	  				log_dict = read_url_log(log_dict, log_url)
 
 	except IOError as err:
 		print "Error: ", err
