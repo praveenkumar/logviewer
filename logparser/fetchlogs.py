@@ -24,18 +24,17 @@ def  fetch_logs(log_path=None, log_url=None):
 		print "Not able to create /var/tmp/logviewer directory"
 
 	try:
-		open("%s/log.json" % (log_directory))
+		json_file = open("%s/log.json" % (log_directory))
 		if os.stat("%s/log.json" % (log_directory)).st_size == 0:
 			raise IOError
 	
 	except IOError as err:
 		print "Json file not present making from scratch"
-		json_file = open("%s/log.json" % (log_directory), 'w')
 	
 	else:
 		print "Should not go to this block"
-		log_dict = json.load(open("%s/log.json" % (log_directory)))
-		json_file = open("%s/log.json" % (log_directory), 'w')
+		log_dict = json.load(json_file)
+		json_file.close()
 
 	# If url set and fetching logs from there.
 	if log_url:
@@ -46,7 +45,7 @@ def  fetch_logs(log_path=None, log_url=None):
 		print "Log Path is Set"
 		log_dict = fetch_path_log(log_dict, log_path)
 
-
+	json_file = open("%s/log.json" % (log_directory), 'w')
 	json.dump(log_dict, json_file)
 	json_file.close()
 
@@ -112,4 +111,4 @@ def read_path_log(log_dict, log_file_path):
 	return log_dict 
 
 if __name__ == '__main__':
-	fetch_logs(log_path="/home/prkumar/Work/logviewer/logparser/logs")
+	fetch_logs(log_url="http://www.dgplug.org/irclogs/2013/")
