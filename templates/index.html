@@ -1,0 +1,25 @@
+{% extends "master.html" %}
+
+{% block title %}Log Table{% endblock %}
+
+{% block body %}
+
+<a href="{{ url_for('upload') }}"> Upload </a>
+
+<table border="1">
+	
+	<tr>
+		<td> date </td>
+		<td> Size </td>
+		<td> File Link </td>
+	</tr>
+
+	{% for log_file, log_data in log_hash_table.items() %}
+		<tr> 
+		<td> {{ log_data['date'] }}</td>
+		<td> {{ log_data['size'] }}</td>
+		<td><a href="{{ url_for('json_file', log_id=log_file.encode('utf-8')) }}"> {{ log_file }} </a></td>
+		</tr>
+	{% endfor %}
+
+{% endblock %}
