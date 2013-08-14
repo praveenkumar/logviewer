@@ -1,19 +1,29 @@
 #!/usr/bin/env python
 
 import flask
-import os
 import json
 from logparser import fetchlogs
 from werkzeug.contrib.cache import SimpleCache
+from werkzeug import secure_filename
+import os
 
 # Create the application
 APP = flask.Flask(__name__)
 APP.config.from_pyfile('logview_config.py')
 print APP.config
-#APP.config.from_envvar('LOFVIEW_CONFIG', silent=True)
+# APP.config.from_envvar('LOFVIEW_CONFIG', silent=True)
 
 # Creating the Cache Object
-cache = SimpleCache(default_timeout = 3600)
+cache = SimpleCache(default_timeout=3600)
+
+# Log Saving Directory
+log_directory = APP.config['LOG_UPLOAD']
+ALLOWED_EXTENSIONS = APP.config['ALLOWED_EXTENSIONS']
+
+# Function which verify extension of the file
+def allowed_file(filename):
+    return '.' in filename and \
+            filename.rsplit('.',1)[1] in ALLOWED_EXTENSIONS
 
 
 @APP.route('/login', methods=['GET', 'POST'])
@@ -30,6 +40,7 @@ def login():
             return flask.redirect(flask.url_for('index'))
     return flask.render_template('login.html', error=error)
 
+
 @APP.route('/logout')
 def logout():
     flask.session.pop('logged_in', None)
@@ -45,23 +56,42 @@ def index():
     if not flask.session.get('logged_in'):
         flask.abort(401)
     log_hash_table = {}
-    fh = open('/var/tmp/logviewer/log.json','r')
+    fh = open('/var/tmp/logviewer/log.json', 'r')
     log_hash_table = json.load(fh)
     fh.close()
+    cache.clear()
     if not cache.get('data'):
         cache.set('data', log_hash_table)
-    return flask.render_template('index.html', log_hash_table=cache.get('data')) 
+    return flask.render_template('index.html', log_hash_table=cache.get('data'))
 
-@APP.route('/upload')
+
+@APP.route('/upload', methods=['GET','POST'])
 def upload():
-    return flask.render_template('upload.html')
+    if not flask.session.get('logged_in'):
+        flask.abort(401)
+    if flask.request.method == 'POST':
+        if not os.path.exists(log_directory):
+            os.makedirs(log_directory)
+        upload_file = flask.request.files['file']
+        if upload_file and allowed_file(upload_file.filename):
+            filename = secure_filename(upload_file.filename)
+            upload_file.save(os.path.join(log_directory, filename))
+            flask.flash('Your file uploaded successfully')
+            if fetchlogs.fetch_logs(log_path=log_directory):
+                return flask.redirect(flask.url_for('index'))
+    else:
+        flask.flash('Looks like post method is not used or there may \
+                be issue with the file')
+        return flask.render_template('upload.html')
+
 
 @APP.route('/log/<log_id>')
 def json_file(log_id):
-    
     """
     Displays Json format of the files '/'
     """
+    if not flask.session.get('logged_in'):
+        flask.abort(401)
     hash_table_object = cache.get('data')
     content = hash_table_object[log_id]['content']
     return flask.render_template('json_file.html', content=content)

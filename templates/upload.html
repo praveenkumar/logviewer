@@ -1,2 +1,12 @@
 {% extends "master.html" %}
-<p> hello </p>
+
+{% block body %}
+
+<form action="{{ url_for('upload') }}" method=post
+    enctype="multipart/form-data">
+    <label for="file">Filename:</label>
+    <input type="file" name="file" id="file" value="file"><br>
+    <input type="submit" value="Submit">
+</form>
+
+{% endblock %}
